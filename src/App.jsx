@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from './features/useAuth'
+import { useAuth } from './hooks/useAuth'
 import Layout from './components/Layout'
 import Feed from './pages/Feed'
 import Profile from './pages/Profile'
