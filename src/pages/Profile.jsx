@@ -1,7 +1,7 @@
 // src/pages/Profile.jsx
 import { useState } from 'react'
-import { useDog } from '../hooks/useDog'
-import { useAuth } from '../hooks/useAuth'
+import { useDog } from '../features/useDog'
+import { useAuth } from '../features/useAuth'
 import AddDogForm from '../components/AddDogForm'
 
 function getAge(birthDate) {
