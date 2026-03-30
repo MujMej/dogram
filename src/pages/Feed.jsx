@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useFeed } from '../hooks/useFeed'
 import { useDog } from '../hooks/useDog'
 import PostCard from '../components/PostCard'
-import NewPost from '../components/NewPost'
+import NewPost from '../features/NewPost'
 
 function Stories({ dogs }) {
   return (
