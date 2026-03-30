@@ -6,23 +6,30 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Provjeri trenutnu sesiju
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    // Slušaj promjene (login / logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
+  const login = async (email, password) => {
+    return await supabase.auth.signInWithPassword({ email, password })
+  }
+
+  const register = async (email, password) => {
+    return await supabase.auth.signUp({ email, password })
+  }
+
   const logout = async () => {
     await supabase.auth.signOut()
   }
 
-  return { user, loading, logout }
+  return { user, loading, login, register, logout }
 }
