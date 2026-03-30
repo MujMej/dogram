@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOGRAM — Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --card: #1a1916;
+    --card2: #222120;
+    --accent: #e8a230;
+    --accent2: #d46b2f;
+    --text: #f0ede8;
+    --muted: #7a7570;
+    --rescue: #e05c5c;
+    --green: #5cb88a;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 40px;
+  }
+
+  /* HEADER */
+  .app-header {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 20px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--text); }
+
+  .header-icons {
+    display: flex;
+    gap: 16px;
+    font-size: 20px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .header-icons span:hover { color: var(--accent); }
+
+  /* NAV */
+  .nav {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+
+  .nav-btn {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-btn.active {
+    background: var(--accent);
+    color: #0f0e0c;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+
+  .nav-btn:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SCREENS */
+  .screen { display: none; width: 100%; max-width: 420px; }
+  .screen.active { display: block; }
+
+  /* ─── FEED ─── */
+  .stories {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+  }
+  .stories::-webkit-scrollbar { display: none; }
+
+  .story {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+
+  .story-ring {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    padding: 2px;
+    transition: transform 0.2s;
+  }
+  .story-ring:hover { transform: scale(1.05); }
+
+  .story-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    border: 2px solid var(--bg);
+  }
+
+  .story-name {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 60px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .post {
+    background: var(--card);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .post:nth-child(2) { animation-delay: 0.1s; }
+  .post:nth-child(3) { animation-delay: 0.2s; }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .post-meta { flex: 1; }
+  .post-name { font-weight: 600; font-size: 14px; }
+  .post-sub { font-size: 12px; color: var(--muted); }
+
+  .post-more { color: var(--muted); font-size: 18px; cursor: pointer; }
+
+  .post-image {
+    width: 100%;
+    height: 280px;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .post-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.4));
+  }
+
+  .post-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px 10px;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    transition: color 0.2s;
+    padding: 0;
+  }
+
+  .action-btn:hover { color: var(--accent); }
+  .action-btn.liked { color: #e05c5c; }
+
+  .action-btn .icon { font-size: 20px; }
+
+  .post-likes {
+    padding: 0 16px 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .post-caption {
+    padding: 4px 16px 16px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .post-caption strong { color: var(--accent); }
+
+  /* ─── PROFIL ─── */
+  .profile-hero {
+    background: linear-gradient(135deg, #1f1d19, #2a2520);
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-hero::before {
+    content: '🐾';
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 60px;
+    opacity: 0.08;
+  }
+
+  .profile-top {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .profile-avatar-big {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent);
+  }
+
+  .profile-info { flex: 1; }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .profile-breed {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .profile-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(232,162,48,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(232,162,48,0.3);
+  }
+
+  .badge.green {
+    background: rgba(92,184,138,0.15);
+    color: var(--green);
+    border-color: rgba(92,184,138,0.3);
+  }
+
+  .profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .profile-bio {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .profile-edit-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #0f0e0c;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+  }
+  .profile-edit-btn:hover { opacity: 0.85; }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .grid-item {
+    aspect-ratio: 1;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .grid-item:hover { transform: scale(0.97); }
+
+  /* ─── MAPA ─── */
+  .map-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .map-search input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .map-search input::placeholder { color: var(--muted); }
+
+  .map-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 16px;
+    padding-bottom: 4px;
+  }
+  .map-filters::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 50px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .filter-chip.active {
+    background: rgba(232,162,48,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .map-placeholder {
+    background: var(--card);
+    border-radius: 20px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    font-size: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .map-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 30% 40%, rgba(232,162,48,0.1) 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(92,184,138,0.08) 0%, transparent 40%);
+  }
+
+  .map-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+
+  .map-emoji { position: relative; z-index: 1; }
+
+  .location-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .location-card:hover { border-color: rgba(232,162,48,0.4); }
+  .location-card:nth-child(2) { animation-delay: 0.05s; }
+  .location-card:nth-child(3) { animation-delay: 0.1s; }
+
+  .location-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(232,162,48,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .location-info { flex: 1; }
+  .location-name { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .location-address { font-size: 12px; color: var(--muted); }
+
+  .location-rating {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ─── AZILI ─── */
+  .rescue-banner {
+    background: linear-gradient(135deg, #2a1515, #1f1010);
+    border: 1px solid rgba(224,92,92,0.3);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rescue-banner::before {
+    content: '❤️';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 64px;
+    opacity: 0.15;
+  }
+
+  .rescue-banner h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    color: #e05c5c;
+    margin-bottom: 6px;
+  }
+
+  .rescue-banner p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .rescue-stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .rescue-stat {
+    flex: 1;
+    background: rgba(224,92,92,0.1);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .rescue-stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #e05c5c;
+  }
+
+  .rescue-stat-label { font-size: 11px; color: var(--muted); }
+
+  .rescue-dog {
+    background: var(--card);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .rescue-dog-img {
+    height: 200px;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 90px;
+    position: relative;
+  }
+
+  .rescue-dog-tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #e05c5c;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .rescue-dog-tag.green {
+    background: var(--green);
+  }
+
+  .rescue-dog-body { padding: 16px; }
+
+  .rescue-dog-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .rescue-dog-info {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .rescue-dog-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .rescue-tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: var(--card2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .adopt-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 12px;
+    background: #e05c5c;
+    color: white;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+  }
+  .adopt-btn:hover { opacity: 0.85; }
+
+  /* ─── PODSJETNICI ─── */
+  .reminder-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .reminder-date {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .add-reminder {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #0f0e0c;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .reminder-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    animation: fadeUp 0.3s ease both;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .reminder-card:hover { border-color: var(--accent); }
+  .reminder-card.done { opacity: 0.5; }
+
+  .reminder-card:nth-child(2) { animation-delay: 0.05s; }
+  .reminder-card:nth-child(3) { animation-delay: 0.1s; }
+  .reminder-card:nth-child(4) { animation-delay: 0.15s; }
+
+  .reminder-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .r-food { background: rgba(232,162,48,0.15); }
+  .r-walk { background: rgba(92,184,138,0.15); }
+  .r-water { background: rgba(100,160,220,0.15); }
+  .r-vaccine { background: rgba(224,92,92,0.15); }
+  .r-groom { background: rgba(180,120,220,0.15); }
+
+  .reminder-info { flex: 1; }
+  .reminder-name { font-weight: 600; font-size: 14px; margin-bottom: 3px; }
+  .reminder-time { font-size: 12px; color: var(--muted); }
+
+  .reminder-check {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .reminder-check.done {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  .progress-section {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .progress-title {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .progress-label { font-size: 13px; min-width: 60px; }
+
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s ease;
+  }
+
+  .progress-val { font-size: 12px; color: var(--muted); min-width: 40px; text-align: right; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 20px 20px;
+    background: rgba(15,14,12,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+  }
+
+  .bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+
+  .bottom-item.active { color: var(--accent); }
+  .bottom-item:hover { color: var(--accent); }
+
+  .bottom-item .icon { font-size: 22px; line-height: 1; }
+  .bottom-item .label { font-size: 10px; font-weight: 500; }
+
+  .bottom-item.active .icon {
+    transform: scale(1.1);
+  }
+
+  .content-wrap {
+    width: 100%;
+    max-width: 420px;
+    padding-bottom: 80px;
+  }
+
+  /* Section title */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo">DO<span>GRAM</span></div>
+  <div class="header-icons">
+    <span title="Pretraga">🔍</span>
+    <span title="Obavještenja">🔔</span>
+    <span title="Poruke">✉️</span>
+  </div>
+</div>
+
+<div class="nav" id="mainNav">
+  <button class="nav-btn active" onclick="showScreen('feed', this)">Feed</button>
+  <button class="nav-btn" onclick="showScreen('profil', this)">Profil</button>
+  <button class="nav-btn" onclick="showScreen('mapa', this)">Mapa</button>
+  <button class="nav-btn" onclick="showScreen('azili', this)">Azili ❤️</button>
+  <button class="nav-btn" onclick="showScreen('podsjetnici', this)">Podsjetnici</button>
+</div>
+
+<div class="content-wrap">
+
+  <!-- FEED -->
+  <div class="screen active" id="screen-feed">
+    <div class="stories">
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🐕</div></div>
+        <div class="story-name">Moj pas</div>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🐩</div></div>
+        <div class="story-name">Bella</div>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🐶</div></div>
+        <div class="story-name">Rex</div>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🦮</div></div>
+        <div class="story-name">Max</div>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🐾</div></div>
+        <div class="story-name">Luna</div>
+      </div>
+      <div class="story">
+        <div class="story-ring"><div class="story-inner">🐕‍🦺</div></div>
+        <div class="story-name">Bruno</div>
+      </div>
+    </div>
+
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar">🐕</div>
+        <div class="post-meta">
+          <div class="post-name">Loki</div>
+          <div class="post-sub">Zlatni Retriver · Sarajevo</div>
+        </div>
+        <div class="post-more">···</div>
+      </div>
+      <div class="post-image">🌿</div>
+      <div class="post-actions">
+        <button class="action-btn liked" onclick="toggleLike(this)">
+          <span class="icon">❤️</span> 248
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span> 32
+        </button>
+        <button class="action-btn">
+          <span class="icon">📤</span>
+        </button>
+      </div>
+      <div class="post-likes">248 lajkova</div>
+      <div class="post-caption"><strong>loki.retriver</strong> Sunčani dan u parku 🌞 Moj omiljeni dio nedjelje! #zlatniretriver #sarajevo #dogstagram</div>
+    </div>
+
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar">🐩</div>
+        <div class="post-meta">
+          <div class="post-name">Bella</div>
+          <div class="post-sub">Pudlica · Mostar</div>
+        </div>
+        <div class="post-more">···</div>
+      </div>
+      <div class="post-image">🌊</div>
+      <div class="post-actions">
+        <button class="action-btn" onclick="toggleLike(this)">
+          <span class="icon">🤍</span> 187
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span> 19
+        </button>
+        <button class="action-btn">
+          <span class="icon">📤</span>
+        </button>
+      </div>
+      <div class="post-likes">187 lajkova</div>
+      <div class="post-caption"><strong>bella.pudlica</strong> Prva kupanja! 🐾 Nisam sigurna jesam li za ovo... #pudlica #mostar #pas</div>
+    </div>
+
+    <div class="post">
+      <div class="post-header">
+        <div class="post-avatar">❤️</div>
+        <div class="post-meta">
+          <div class="post-name">Azil Sarajevo</div>
+          <div class="post-sub">Azil · Verifikovano ✓</div>
+        </div>
+        <div class="post-more">···</div>
+      </div>
+      <div class="post-image" style="background: linear-gradient(135deg, #2a1515, #1f1010);">
+        <span style="font-size: 70px; position: relative; z-index: 1;">🐕</span>
+      </div>
+      <div class="post-actions">
+        <button class="action-btn" onclick="toggleLike(this)">
+          <span class="icon">🤍</span> 512
+        </button>
+        <button class="action-btn">
+          <span class="icon">💬</span> 74
+        </button>
+        <button class="action-btn">
+          <span class="icon">📤</span>
+        </button>
+      </div>
+      <div class="post-likes">512 lajkova</div>
+      <div class="post-caption"><strong>azil.sarajevo</strong> 🆘 Upoznajte Taru! 3 godine, cijepljena, odgajena. Traži dom pun ljubavi. Link u bio za usvajanje. ❤️ #adopcija #azil #sarajevo</div>
+    </div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="screen" id="screen-profil">
+    <div class="profile-hero">
+      <div class="profile-top">
+        <div class="profile-avatar-big">🐕</div>
+        <div class="profile-info">
+          <div class="profile-name">Loki</div>
+          <div class="profile-breed">Zlatni Retriver · 2 god.</div>
+          <div class="profile-badges">
+            <span class="badge">🏆 Top pas</span>
+            <span class="badge green">✓ Cijepljen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-stats">
+        <div class="stat-box">
+          <div class="stat-value">247</div>
+          <div class="stat-label">Postovi</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">1.4k</div>
+          <div class="stat-label">Pratilaca</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">32kg</div>
+          <div class="stat-label">Težina</div>
+        </div>
+      </div>
+
+      <div class="profile-bio">
+        Zlatni retriver iz Sarajeva 🏔️ Volim šetnje, lopte i sve ljude! Vlasnik: Amra ☀️
+      </div>
+
+      <button class="profile-edit-btn">Uredi profil</button>
+    </div>
+
+    <div class="section-title">📸 Galerija</div>
+    <div class="profile-grid">
+      <div class="grid-item">🌿</div>
+      <div class="grid-item">🏔️</div>
+      <div class="grid-item">🌊</div>
+      <div class="grid-item">🌞</div>
+      <div class="grid-item">🐾</div>
+      <div class="grid-item">🎾</div>
+      <div class="grid-item">❄️</div>
+      <div class="grid-item">🌸</div>
+      <div class="grid-item">🏕️</div>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div class="screen" id="screen-mapa">
+    <div class="map-search">
+      <span>🔍</span>
+      <input type="text" placeholder="Pretraži lokacije...">
+      <span style="font-size:18px; cursor:pointer;">🎯</span>
+    </div>
+
+    <div class="map-filters">
+      <div class="filter-chip active">Sve</div>
+      <div class="filter-chip" onclick="filterChip(this)">🌳 Parkovi</div>
+      <div class="filter-chip" onclick="filterChip(this)">☕ Kafići</div>
+      <div class="filter-chip" onclick="filterChip(this)">🏥 Veterinar</div>
+      <div class="filter-chip" onclick="filterChip(this)">✂️ Grooming</div>
+      <div class="filter-chip" onclick="filterChip(this)">🛒 Pet shop</div>
+    </div>
+
+    <div class="map-placeholder">
+      <span class="map-emoji">🗺️</span>
+      <div class="map-label">Google Maps integracija</div>
+    </div>
+
+    <div class="section-title">📍 Blizu tebe</div>
+
+    <div class="location-card">
+      <div class="location-icon">🌳</div>
+      <div class="location-info">
+        <div class="location-name">Park Ilidža</div>
+        <div class="location-address">Ilidža, Sarajevo · 1.2 km</div>
+      </div>
+      <div class="location-rating">★ 4.8</div>
+    </div>
+
+    <div class="location-card">
+      <div class="location-icon">☕</div>
+      <div class="location-info">
+        <div class="location-name">Kaffe Botanika</div>
+        <div class="location-address">Grbavica, Sarajevo · 0.8 km</div>
+      </div>
+      <div class="location-rating">★ 4.6</div>
+    </div>
+
+    <div class="location-card">
+      <div class="location-icon">🏥</div>
+      <div class="location-info">
+        <div class="location-name">Vet Centar Sarajevo</div>
+        <div class="location-address">Novo Sarajevo · 2.1 km</div>
+      </div>
+      <div class="location-rating">★ 4.9</div>
+    </div>
+
+    <div class="location-card">
+      <div class="location-icon">✂️</div>
+      <div class="location-info">
+        <div class="location-name">Doggy Style Grooming</div>
+        <div class="location-address">Centar, Sarajevo · 1.5 km</div>
+      </div>
+      <div class="location-rating">★ 4.7</div>
+    </div>
+  </div>
+
+  <!-- AZILI -->
+  <div class="screen" id="screen-azili">
+    <div class="rescue-banner">
+      <h2>Azili u BiH</h2>
+      <p>Svaki pas zaslužuje dom. Pomaži usvajanjem ili donacijom.</p>
+      <div class="rescue-stats">
+        <div class="rescue-stat">
+          <div class="rescue-stat-num">247</div>
+          <div class="rescue-stat-label">Pasa čeka</div>
+        </div>
+        <div class="rescue-stat">
+          <div class="rescue-stat-num">48</div>
+          <div class="rescue-stat-label">Usvajanja</div>
+        </div>
+        <div class="rescue-stat">
+          <div class="rescue-stat-num">12</div>
+          <div class="rescue-stat-label">Azila</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rescue-dog">
+      <div class="rescue-dog-img">
+        🐕
+        <span class="rescue-tag">TRAŽI DOM</span>
+      </div>
+      <div class="rescue-dog-body">
+        <div class="rescue-dog-name">Tara</div>
+        <div class="rescue-dog-info">Mješanac · ♀ Ženka · ~3 god. · Azil Manjača, Banja Luka</div>
+        <div class="rescue-dog-tags">
+          <span class="rescue-tag">✓ Cijepljena</span>
+          <span class="rescue-tag">✓ Sterilizovana</span>
+          <span class="rescue-tag">❤️ Mirna</span>
+          <span class="rescue-tag">🐾 Dobra s djecom</span>
+        </div>
+        <button class="adopt-btn">❤️ Usvoji Taru</button>
+      </div>
+    </div>
+
+    <div class="rescue-dog">
+      <div class="rescue-dog-img">
+        🐶
+        <span class="rescue-tag green">HITNO</span>
+      </div>
+      <div class="rescue-dog-body">
+        <div class="rescue-dog-name">Medo</div>
+        <div class="rescue-dog-info">Mješanac · ♂ Mužjak · ~5 god. · Azil Sarajevo</div>
+        <div class="rescue-dog-tags">
+          <span class="rescue-tag">✓ Cijepljen</span>
+          <span class="rescue-tag">🏃 Aktivan</span>
+          <span class="rescue-tag">🎾 Voli igru</span>
+        </div>
+        <button class="adopt-btn">❤️ Usvoji Medu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PODSJETNICI -->
+  <div class="screen" id="screen-podsjetnici">
+    <div class="reminder-header">
+      <div>
+        <div class="section-title" style="margin-bottom: 2px;">⏰ Danas</div>
+        <div class="reminder-date">Ponedjeljak, 30. mart</div>
+      </div>
+      <button class="add-reminder">+ Dodaj</button>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-title">Dnevni napredak — Loki</div>
+      <div class="progress-row">
+        <div class="progress-label">🍖 Hrana</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 50%"></div></div>
+        <div class="progress-val">1/2</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">💧 Voda</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 70%"></div></div>
+        <div class="progress-val">700ml</div>
+      </div>
+      <div class="progress-row">
+        <div class="progress-label">🚶 Šetnja</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 33%"></div></div>
+        <div class="progress-val">1/3</div>
+      </div>
+    </div>
+
+    <div class="reminder-card done" onclick="toggleDone(this)">
+      <div class="reminder-icon-wrap r-food">🍖</div>
+      <div class="reminder-info">
+        <div class="reminder-name">Jutarnje hranjenje</div>
+        <div class="reminder-time">07:30 · 200g suhe hrane</div>
+      </div>
+      <div class="reminder-check done">✓</div>
+    </div>
+
+    <div class="reminder-card" onclick="toggleDone(this)">
+      <div class="reminder-icon-wrap r-walk">🚶</div>
+      <div class="reminder-info">
+        <div class="reminder-name">Jutarnja šetnja</div>
+        <div class="reminder-time">08:00 · 30 min</div>
+      </div>
+      <div class="reminder-check"></div>
+    </div>
+
+    <div class="reminder-card" onclick="toggleDone(this)">
+      <div class="reminder-icon-wrap r-food">🍖</div>
+      <div class="reminder-info">
+        <div class="reminder-name">Večernje hranjenje</div>
+        <div class="reminder-time">18:00 · 200g suhe hrane</div>
+      </div>
+      <div class="reminder-check"></div>
+    </div>
+
+    <div class="reminder-card" onclick="toggleDone(this)">
+      <div class="reminder-icon-wrap r-walk">🚶</div>
+      <div class="reminder-info">
+        <div class="reminder-name">Večernja šetnja</div>
+        <div class="reminder-time">19:00 · 45 min</div>
+      </div>
+      <div class="reminder-check"></div>
+    </div>
+
+    <div class="reminder-card" onclick="toggleDone(this)">
+      <div class="reminder-icon-wrap r-vaccine">💉</div>
+      <div class="reminder-info">
+        <div class="reminder-name">Vakcina — podsjetnik</div>
+        <div class="reminder-time">Za 12 dana · Vet Centar</div>
+      </div>
+      <div class="reminder-check"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bottom-item active" onclick="showScreen('feed', null); setBottomActive(this)">
+    <div class="icon">🏠</div>
+    <div class="label">Feed</div>
+  </div>
+  <div class="bottom-item" onclick="showScreen('mapa', null); setBottomActive(this)">
+    <div class="icon">🗺️</div>
+    <div class="label">Mapa</div>
+  </div>
+  <div class="bottom-item" onclick="showScreen('azili', null); setBottomActive(this)">
+    <div class="icon">❤️</div>
+    <div class="label">Azili</div>
+  </div>
+  <div class="bottom-item" onclick="showScreen('podsjetnici', null); setBottomActive(this)">
+    <div class="icon">⏰</div>
+    <div class="label">Briga</div>
+  </div>
+  <div class="bottom-item" onclick="showScreen('profil', null); setBottomActive(this)">
+    <div class="icon">🐾</div>
+    <div class="label">Profil</div>
+  </div>
+</div>
+
+<script>
+  function showScreen(name, navBtn) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    if (navBtn) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      navBtn.classList.add('active');
+    }
+    // sync bottom nav
+    const map = {feed: 0, mapa: 1, azili: 2, podsjetnici: 3, profil: 4};
+    if (map[name] !== undefined) {
+      document.querySelectorAll('.bottom-item').forEach((b, i) => {
+        b.classList.toggle('active', i === map[name]);
+      });
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function setBottomActive(el) {
+    document.querySelectorAll('.bottom-item').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function toggleLike(btn) {
+    const liked = btn.classList.toggle('liked');
+    const count = parseInt(btn.textContent.trim());
+    btn.innerHTML = `<span class="icon">${liked ? '❤️' : '🤍'}</span> ${liked ? count + 1 : count - 1}`;
+  }
+
+  function toggleDone(card) {
+    card.classList.toggle('done');
+    const check = card.querySelector('.reminder-check');
+    check.classList.toggle('done');
+    check.textContent = check.classList.contains('done') ? '✓' : '';
+  }
+
+  function filterChip(el) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
