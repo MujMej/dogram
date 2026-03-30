@@ -10,9 +10,13 @@ export function useDog() {
 
   // Dohvati sve pse trenutnog korisnika
   useEffect(() => {
-    if (!user) return
-    fetchMyDogs()
-  }, [user])
+  if (!user) {
+    setDogs([])
+    setLoading(false)
+    return
+  }
+  fetchMyDogs()
+}, [user])
 
   const fetchMyDogs = async () => {
     setLoading(true)
