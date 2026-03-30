@@ -1,7 +1,7 @@
 // src/pages/Feed.jsx
 import { useState } from 'react'
-import { useFeed } from '../hooks/useFeed'
-import { useDog } from '../hooks/useDog'
+import { useFeed } from '../features/useFeed'
+import { useDog } from '../features/useDog'
 import PostCard from '../components/PostCard'
 import NewPost from '../components/NewPost'
 
