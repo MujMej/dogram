@@ -1,4 +1,3 @@
-// src/hooks/useDog.js
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
@@ -9,9 +8,12 @@ export function useDog() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Dohvati sve pse trenutnog korisnika
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      setDogs([])
+      setLoading(false)
+      return
+    }
     fetchMyDogs()
   }, [user])
 
@@ -24,11 +26,11 @@ export function useDog() {
       .order('created_at', { ascending: false })
 
     if (error) setError(error.message)
-    else setDogs(data)
+    else setDogs(data || [])
+
     setLoading(false)
   }
 
-  // Dodaj novog psa
   const addDog = async (dogData) => {
     const { data, error } = await supabase
       .from('dogs')
@@ -37,11 +39,11 @@ export function useDog() {
       .single()
 
     if (error) return { error }
+
     setDogs(prev => [data, ...prev])
     return { data }
   }
 
-  // Ažuriraj psa
   const updateDog = async (dogId, updates) => {
     const { data, error } = await supabase
       .from('dogs')
@@ -52,11 +54,11 @@ export function useDog() {
       .single()
 
     if (error) return { error }
-    setDogs(prev => prev.map(d => d.id === dogId ? data : d))
+
+    setDogs(prev => prev.map(d => (d.id === dogId ? data : d)))
     return { data }
   }
 
-  // Upload slike psa
   const uploadDogAvatar = async (dogId, file) => {
     const fileExt = file.name.split('.').pop()
     const filePath = `dogs/${dogId}/avatar.${fileExt}`
@@ -71,7 +73,6 @@ export function useDog() {
       .from('avatars')
       .getPublicUrl(filePath)
 
-    // Sačuvaj URL u bazu
     await updateDog(dogId, { avatar_url: publicUrl })
     return { url: publicUrl }
   }
