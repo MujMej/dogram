@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useDog } from '../hooks/useDog'
 import { useAuth } from '../hooks/useAuth'
-import AddDogForm from '../components/AddDogForm'
+import AddDogForm from '../features/AddDogForm'
 
 function getAge(birthDate) {
   if (!birthDate) return null
