@@ -1,4 +1,3 @@
-// src/hooks/useFeed.js
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
@@ -13,12 +12,11 @@ export function useFeed() {
     fetchFeed()
   }, [])
 
-  // Dohvati feed (svi javni postovi, najnoviji prvi)
   const fetchFeed = async () => {
     setLoading(true)
 
     const { data, error } = await supabase
-      .from('feed_posts')   // view koji smo napravili u schema.sql
+      .from('feed_posts')
       .select('*')
       .limit(30)
 
@@ -26,12 +24,12 @@ export function useFeed() {
     setLoading(false)
   }
 
-  // Napravi novi post
   const createPost = async ({ dogId, caption, locationName, imageFile }) => {
+    if (!user) return { error: 'Korisnik nije prijavljen.' }
     if (!imageFile || !dogId) return { error: 'Nedostaju podaci.' }
+
     setUploading(true)
 
-    // 1. Upload slike
     const ext = imageFile.name.split('.').pop()
     const fileName = `${Date.now()}.${ext}`
     const filePath = `posts/${user.id}/${fileName}`
@@ -40,13 +38,15 @@ export function useFeed() {
       .from('posts')
       .upload(filePath, imageFile)
 
-    if (uploadError) { setUploading(false); return { error: uploadError.message } }
+    if (uploadError) {
+      setUploading(false)
+      return { error: uploadError.message }
+    }
 
     const { data: { publicUrl } } = supabase.storage
       .from('posts')
       .getPublicUrl(filePath)
 
-    // 2. Sačuvaj post u bazu
     const { data, error } = await supabase
       .from('posts')
       .insert([{
@@ -60,18 +60,16 @@ export function useFeed() {
       .single()
 
     setUploading(false)
+
     if (error) return { error: error.message }
 
-    // Dodaj na vrh feeda odmah (optimistic update)
     fetchFeed()
     return { data }
   }
 
-  // Lajkaj / unlajkaj
   const toggleLike = async (postId) => {
     if (!user) return
 
-    // Provjeri da li već postoji lajk
     const { data: existing } = await supabase
       .from('post_likes')
       .select('id')
@@ -80,7 +78,6 @@ export function useFeed() {
       .single()
 
     if (existing) {
-      // Ukloni lajk
       await supabase.from('post_likes').delete().eq('id', existing.id)
       setPosts(prev => prev.map(p =>
         p.id === postId
@@ -88,7 +85,6 @@ export function useFeed() {
           : p
       ))
     } else {
-      // Dodaj lajk
       await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }])
       setPosts(prev => prev.map(p =>
         p.id === postId
@@ -98,7 +94,6 @@ export function useFeed() {
     }
   }
 
-  // Dohvati komentare za post
   const fetchComments = async (postId) => {
     const { data } = await supabase
       .from('post_comments')
@@ -109,7 +104,6 @@ export function useFeed() {
     return data || []
   }
 
-  // Dodaj komentar
   const addComment = async (postId, content) => {
     if (!content.trim()) return
     const { data, error } = await supabase
@@ -125,6 +119,7 @@ export function useFeed() {
           : p
       ))
     }
+
     return { data, error }
   }
 
