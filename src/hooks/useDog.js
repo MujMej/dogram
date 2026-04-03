@@ -183,6 +183,11 @@ export function useDog() {
 
     setError(null)
 
+    const existingDog = dogs.find((d) => d.id === dogId)
+    const oldAvatarPath = existingDog?.avatar_url
+      ? extractStoragePathFromPublicUrl(existingDog.avatar_url, 'avatars')
+      : null
+
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     const filePath = `dogs/${dogId}/avatar-${Date.now()}.${fileExt}`
 
@@ -204,6 +209,14 @@ export function useDog() {
     if (updateError) {
       await supabase.storage.from('avatars').remove([filePath])
       return { url: null, error: updateError }
+    }
+
+    if (oldAvatarPath && oldAvatarPath !== filePath) {
+      try {
+        await supabase.storage.from('avatars').remove([oldAvatarPath])
+      } catch (e) {
+        console.warn('Stari avatar nije obrisan:', e)
+      }
     }
 
     return { url: publicUrl, error: null }
