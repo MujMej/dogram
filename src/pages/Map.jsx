@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { MAP_CATEGORIES } from '../lib/mapCategories'
 import { searchGooglePlaces } from '../lib/placesApi'
 import { loadGoogleMaps } from '../lib/loadGoogleMaps'
 
-const DEFAULT_CENTER = { lat: 44.7722, lng: 17.1910 } // Banja Luka
+const DEFAULT_CENTER = { lat: 44.7722, lng: 17.1910 }
 
 export default function Map() {
   const mapRef = useRef(null)
@@ -13,6 +13,7 @@ export default function Map() {
   const infoWindowRef = useRef(null)
 
   const [loading, setLoading] = useState(false)
+  const [mapError, setMapError] = useState('')
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [places, setPlaces] = useState([])
 
@@ -26,22 +27,65 @@ export default function Map() {
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
       (position) => {
-        const coords = {
+        setUserLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        }
-        setUserLocation(coords)
+        })
       },
-      () => {
-        setUserLocation(DEFAULT_CENTER)
-      },
+      () => setUserLocation(DEFAULT_CENTER),
       { enableHighAccuracy: true, timeout: 10000 }
     )
   }, [])
 
-  useEffect(() => {
-    initMap()
+  const clearMarkers = useCallback(() => {
+    markersRef.current.forEach((marker) => {
+      marker.map = null
+    })
+    markersRef.current = []
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function initMap() {
+      try {
+        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY
+        if (!apiKey) {
+          throw new Error('Missing VITE_GOOGLE_MAPS_BROWSER_KEY')
+        }
+
+        await loadGoogleMaps(apiKey)
+
+        const { Map } = await google.maps.importLibrary('maps')
+        await google.maps.importLibrary('marker')
+
+        if (!mounted || !mapRef.current) return
+
+        const map = new Map(mapRef.current, {
+          center: userLocation,
+          zoom: 13,
+          mapId: import.meta.env.VITE_GOOGLE_MAP_ID || 'DEMO_MAP_ID',
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+        })
+
+        mapInstanceRef.current = map
+        infoWindowRef.current = new google.maps.InfoWindow()
+        setMapError('')
+      } catch (err) {
+        console.error(err)
+        setMapError('Mapa se nije mogla učitati.')
+      }
+    }
+
+    initMap()
+
+    return () => {
+      mounted = false
+      clearMarkers()
+    }
+  }, [clearMarkers, userLocation])
 
   useEffect(() => {
     if (mapInstanceRef.current) {
@@ -49,43 +93,7 @@ export default function Map() {
     }
   }, [userLocation])
 
-  useEffect(() => {
-    renderMarkers()
-  }, [places])
-
-  async function initMap() {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY
-    if (!apiKey) {
-      console.error('Missing VITE_GOOGLE_MAPS_BROWSER_KEY')
-      return
-    }
-
-    await loadGoogleMaps(apiKey)
-
-    const { Map } = await google.maps.importLibrary('maps')
-    await google.maps.importLibrary('marker')
-
-    const map = new Map(mapRef.current, {
-      center: userLocation,
-      zoom: 13,
-      mapId: import.meta.env.VITE_GOOGLE_MAP_ID || 'DEMO_MAP_ID',
-      streetViewControl: false,
-      mapTypeControl: false,
-      fullscreenControl: false,
-    })
-
-    mapInstanceRef.current = map
-    infoWindowRef.current = new google.maps.InfoWindow()
-  }
-
-  function clearMarkers() {
-    markersRef.current.forEach((marker) => {
-      marker.map = null
-    })
-    markersRef.current = []
-  }
-
-  async function renderMarkers() {
+  const renderMarkers = useCallback(async () => {
     if (!mapInstanceRef.current || !window.google?.maps) return
 
     clearMarkers()
@@ -93,9 +101,10 @@ export default function Map() {
     const { AdvancedMarkerElement } = await google.maps.importLibrary('marker')
 
     for (const place of places) {
-      if (typeof place.latitude !== 'number' || typeof place.longitude !== 'number') {
-        continue
-      }
+      const lat = Number(place.latitude)
+      const lng = Number(place.longitude)
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
 
       const markerContent = document.createElement('div')
       markerContent.className = `rounded-full px-3 py-2 text-xs font-bold shadow-lg border ${
@@ -107,14 +116,15 @@ export default function Map() {
 
       const marker = new AdvancedMarkerElement({
         map: mapInstanceRef.current,
-        position: { lat: place.latitude, lng: place.longitude },
+        position: { lat, lng },
         content: markerContent,
         title: place.title,
       })
 
       marker.addListener('click', () => {
         setSelectedPlace(place)
-        infoWindowRef.current.setContent(`
+
+        infoWindowRef.current?.setContent(`
           <div style="min-width:220px;max-width:280px;padding:4px 2px;">
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">
               ${escapeHtml(place.title)}
@@ -134,7 +144,8 @@ export default function Map() {
             }
           </div>
         `)
-        infoWindowRef.current.open({
+
+        infoWindowRef.current?.open({
           anchor: marker,
           map: mapInstanceRef.current,
         })
@@ -145,14 +156,25 @@ export default function Map() {
 
     if (places.length > 0) {
       const bounds = new google.maps.LatLngBounds()
+
       places.forEach((place) => {
-        if (typeof place.latitude === 'number' && typeof place.longitude === 'number') {
-          bounds.extend({ lat: place.latitude, lng: place.longitude })
+        const lat = Number(place.latitude)
+        const lng = Number(place.longitude)
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          bounds.extend({ lat, lng })
         }
       })
-      mapInstanceRef.current.fitBounds(bounds)
+
+      if (!bounds.isEmpty()) {
+        mapInstanceRef.current.fitBounds(bounds)
+      }
     }
-  }
+  }, [places, clearMarkers])
+
+  useEffect(() => {
+    renderMarkers()
+  }, [renderMarkers])
 
   async function fetchSponsoredPlaces() {
     let query = supabase
@@ -162,7 +184,7 @@ export default function Map() {
       .eq('category_key', categoryKey)
 
     if (city?.trim()) {
-      query = query.ilike('city', city.trim())
+      query = query.ilike('city', `%${city.trim()}%`)
     }
 
     const { data, error } = await query
@@ -174,8 +196,8 @@ export default function Map() {
       title: item.title,
       category_key: item.category_key,
       address: item.address,
-      latitude: item.latitude,
-      longitude: item.longitude,
+      latitude: Number(item.latitude),
+      longitude: Number(item.longitude),
       phone: item.phone,
       website: item.website,
       maps_url: null,
@@ -196,6 +218,7 @@ export default function Map() {
 
   async function runSearch() {
     setLoading(true)
+
     try {
       const googleResults = await searchGooglePlaces({
         categoryKey,
@@ -210,13 +233,16 @@ export default function Map() {
 
       const merged = mergePlaces(googleResults, sponsoredResults).map((item) => ({
         ...item,
+        latitude: Number(item.latitude),
+        longitude: Number(item.longitude),
         icon: getCategoryIcon(item.category_key),
       }))
 
       setPlaces(merged)
     } catch (error) {
       console.error(error)
-      alert('Greška pri učitavanju lokacija.')
+      setPlaces([])
+      alert(error.message || 'Greška pri učitavanju lokacija.')
     } finally {
       setLoading(false)
     }
@@ -283,7 +309,13 @@ export default function Map() {
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-white/10 bg-[#171512]">
-        <div ref={mapRef} className="h-[480px] w-full" />
+        {mapError ? (
+          <div className="flex h-[480px] items-center justify-center p-6 text-sm text-red-300">
+            {mapError}
+          </div>
+        ) : (
+          <div ref={mapRef} className="h-[480px] w-full" />
+        )}
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-[#171512] p-4">
