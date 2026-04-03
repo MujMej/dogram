@@ -1,5 +1,4 @@
-// src/components/AddDogForm.jsx
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDog } from '../hooks/useDog'
 
 const BREEDS = [
@@ -23,58 +22,96 @@ const INITIAL = {
 }
 
 export default function AddDogForm({ onSuccess, onCancel }) {
-  const { addDog } = useDog()
+  const { addDog, uploadDogAvatar } = useDog()
   const [form, setForm] = useState(INITIAL)
   const [avatarFile, setAvatarFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState(1) // 2-koračna forma
+  const [step, setStep] = useState(1)
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
   const handleAvatar = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files?.[0]
     if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      setError('Dozvoljene su samo slike.')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Slika ne smije biti veća od 5 MB.')
+      return
+    }
+
+    if (preview) URL.revokeObjectURL(preview)
+
+    setError('')
     setAvatarFile(file)
     setPreview(URL.createObjectURL(file))
   }
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { setError('Ime psa je obavezno.'); return }
-    if (!form.gender) { setError('Odaberi spol.'); return }
+    if (!form.name.trim()) {
+      setError('Ime psa je obavezno.')
+      return
+    }
+
+    if (!form.gender) {
+      setError('Odaberi spol.')
+      return
+    }
 
     setLoading(true)
     setError('')
 
-    const dogData = {
-      ...form,
-      weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
-      birth_date: form.birth_date || null,
-    }
+    try {
+      const dogData = {
+        ...form,
+        name: form.name.trim(),
+        breed: form.breed || null,
+        bio: form.bio?.trim() || null,
+        weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
+        birth_date: form.birth_date || null,
+      }
 
-    const { data, error } = await addDog(dogData)
+      const { data, error } = await addDog(dogData)
 
-    if (error) {
-      setError('Greška pri dodavanju. Pokušaj ponovo.')
+      if (error) {
+        throw new Error(error.message || 'Greška pri dodavanju psa.')
+      }
+
+      if (avatarFile && data?.id) {
+        const { error: avatarError } = await uploadDogAvatar(data.id, avatarFile)
+        if (avatarError) {
+          throw new Error(avatarError.message || 'Pas je dodat, ali upload slike nije uspio.')
+        }
+      }
+
+      setForm(INITIAL)
+      setAvatarFile(null)
+      if (preview) URL.revokeObjectURL(preview)
+      setPreview(null)
+      setStep(1)
+
+      onSuccess?.(data)
+    } catch (err) {
+      setError(err.message || 'Greška pri dodavanju. Pokušaj ponovo.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    // Upload avatara ako postoji
-    if (avatarFile && data) {
-      const { uploadDogAvatar } = useDog()
-      await uploadDogAvatar(data.id, avatarFile)
-    }
-
-    setLoading(false)
-    onSuccess?.(data)
   }
 
   return (
     <div className="bg-[#1a1916] rounded-2xl p-6 border border-white/10">
-
-      {/* Progress */}
       <div className="flex gap-2 mb-6">
         {[1, 2].map(s => (
           <div
@@ -90,21 +127,18 @@ export default function AddDogForm({ onSuccess, onCancel }) {
         <div className="space-y-4">
           <h2 className="text-xl font-bold mb-4">🐶 Osnovni podaci</h2>
 
-          {/* Avatar */}
           <div className="flex justify-center mb-2">
             <label className="cursor-pointer">
               <div className="w-24 h-24 rounded-full bg-[#222120] border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden hover:border-[#e8a230] transition-colors">
                 {preview
                   ? <img src={preview} alt="preview" className="w-full h-full object-cover" />
-                  : <span className="text-4xl">🐾</span>
-                }
+                  : <span className="text-4xl">🐾</span>}
               </div>
               <p className="text-xs text-gray-500 text-center mt-2">Dodaj sliku</p>
               <input type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
             </label>
           </div>
 
-          {/* Ime */}
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Ime psa *</label>
             <input
@@ -116,7 +150,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             />
           </div>
 
-          {/* Rasa */}
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Rasa</label>
             <select
@@ -129,7 +162,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             </select>
           </div>
 
-          {/* Spol */}
           <div>
             <label className="text-sm text-gray-400 mb-2 block">Spol *</label>
             <div className="flex gap-3">
@@ -153,7 +185,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Datum rođenja */}
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Datum rođenja</label>
             <input
@@ -170,8 +201,14 @@ export default function AddDogForm({ onSuccess, onCancel }) {
           <button
             type="button"
             onClick={() => {
-              if (!form.name.trim()) { setError('Ime je obavezno.'); return }
-              if (!form.gender) { setError('Odaberi spol.'); return }
+              if (!form.name.trim()) {
+                setError('Ime je obavezno.')
+                return
+              }
+              if (!form.gender) {
+                setError('Odaberi spol.')
+                return
+              }
               setError('')
               setStep(2)
             }}
@@ -192,7 +229,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
         <div className="space-y-4">
           <h2 className="text-xl font-bold mb-4">🏃 Detalji</h2>
 
-          {/* Težina */}
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Težina (kg)</label>
             <input
@@ -207,7 +243,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             />
           </div>
 
-          {/* Nivo aktivnosti */}
           <div>
             <label className="text-sm text-gray-400 mb-2 block">Nivo aktivnosti</label>
             <div className="flex gap-2">
@@ -232,7 +267,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Sterilizacija */}
           <div
             className="flex items-center justify-between bg-[#222120] rounded-xl px-4 py-3 cursor-pointer"
             onClick={() => set('is_neutered', !form.is_neutered)}
@@ -243,7 +277,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Javni profil */}
           <div
             className="flex items-center justify-between bg-[#222120] rounded-xl px-4 py-3 cursor-pointer"
             onClick={() => set('is_public', !form.is_public)}
@@ -257,7 +290,6 @@ export default function AddDogForm({ onSuccess, onCancel }) {
             </div>
           </div>
 
-          {/* Bio */}
           <div>
             <label className="text-sm text-gray-400 mb-1 block">Bio</label>
             <textarea
