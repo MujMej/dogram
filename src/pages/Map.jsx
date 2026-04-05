@@ -4,7 +4,7 @@ import { MAP_CATEGORIES } from '../lib/mapCategories'
 import { searchGooglePlaces } from '../lib/placesApi'
 import { loadGoogleMaps } from '../lib/loadGoogleMaps'
 
-const DEFAULT_CENTER = { lat: 44.7722, lng: 17.1910 }
+const DEFAULT_CENTER = { lat: 44.7722, lng: 17.191 }
 
 export default function Map() {
   const mapRef = useRef(null)
@@ -16,7 +16,6 @@ export default function Map() {
   const [mapError, setMapError] = useState('')
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [places, setPlaces] = useState([])
-
   const [categoryKey, setCategoryKey] = useState('dog_park')
   const [city, setCity] = useState('Banja Luka')
   const [radius, setRadius] = useState(7000)
@@ -50,6 +49,8 @@ export default function Map() {
     async function initMap() {
       try {
         const apiKey = import.meta.env.VITE_GOOGLE_MAPS_BROWSER_KEY
+        const mapId = import.meta.env.VITE_GOOGLE_MAP_ID
+
         if (!apiKey) {
           throw new Error('Missing VITE_GOOGLE_MAPS_BROWSER_KEY')
         }
@@ -64,7 +65,7 @@ export default function Map() {
         const map = new Map(mapRef.current, {
           center: userLocation,
           zoom: 13,
-          mapId: import.meta.env.VITE_GOOGLE_MAP_ID || 'DEMO_MAP_ID',
+          mapId: mapId || undefined,
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
@@ -107,11 +108,14 @@ export default function Map() {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
 
       const markerContent = document.createElement('div')
-      markerContent.className = `rounded-full px-3 py-2 text-xs font-bold shadow-lg border ${
-        place.is_sponsored
-          ? 'bg-[#e8a230] text-black border-[#e8a230]'
-          : 'bg-[#171512] text-white border-white/10'
-      }`
+      markerContent.style.background = place.is_sponsored ? '#e8a230' : '#171512'
+      markerContent.style.color = place.is_sponsored ? '#000' : '#fff'
+      markerContent.style.border = '1px solid rgba(255,255,255,0.12)'
+      markerContent.style.borderRadius = '9999px'
+      markerContent.style.padding = '8px 12px'
+      markerContent.style.fontSize = '12px'
+      markerContent.style.fontWeight = '700'
+      markerContent.style.boxShadow = '0 10px 20px rgba(0,0,0,0.25)'
       markerContent.textContent = `${place.icon || '📍'} ${place.title}`
 
       const marker = new AdvancedMarkerElement({
@@ -467,7 +471,7 @@ function InfoCard({ label, value }) {
   return (
     <div className="rounded-2xl bg-[#0f0e0c] p-4">
       <span className="block text-xs uppercase tracking-wide text-gray-500">{label}</span>
-      <span className="mt-2 block text-sm text-white break-words">{value}</span>
+      <span className="mt-2 block break-words text-sm text-white">{value}</span>
     </div>
   )
 }
