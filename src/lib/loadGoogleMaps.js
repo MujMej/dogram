@@ -1,6 +1,10 @@
 let mapsPromise = null
 
 export function loadGoogleMaps(apiKey) {
+  if (!apiKey) {
+    return Promise.reject(new Error('Missing Google Maps API key'))
+  }
+
   if (window.google?.maps) {
     return Promise.resolve(window.google.maps)
   }
@@ -11,9 +15,10 @@ export function loadGoogleMaps(apiKey) {
 
   mapsPromise = new Promise((resolve, reject) => {
     const existing = document.getElementById('dogram-google-maps')
+
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.google.maps))
-      existing.addEventListener('error', reject)
+      existing.addEventListener('load', () => resolve(window.google.maps), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Google Maps script failed to load')), { once: true })
       return
     }
 
@@ -23,7 +28,7 @@ export function loadGoogleMaps(apiKey) {
     script.async = true
     script.defer = true
     script.onload = () => resolve(window.google.maps)
-    script.onerror = reject
+    script.onerror = () => reject(new Error('Google Maps script failed to load'))
     document.head.appendChild(script)
   })
 
